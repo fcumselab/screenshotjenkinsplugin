@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+    Take a screenshot of all HTML files under the project(src/) and save all screenshot png file to test/screenshot/.
+</div>
