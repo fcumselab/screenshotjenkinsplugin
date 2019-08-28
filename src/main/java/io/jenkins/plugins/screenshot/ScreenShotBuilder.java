@@ -73,7 +73,7 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
     String screenshotPath = workspace + "/target/screenshot/";
 
     String jobName = workspace.toString().substring(workspace.toString().lastIndexOf("/") + 1);
-    String driverGetPath = Jenkins.getInstance().getRootUrl() + "job/" + jobName + "/ws/target/screenshot/";
+    String driverGetPath = "file:////var/lib/workspace/" + jobName + "/target/screenshot/";
     // create screenshot folder
     File screenshotFolder = new File(screenshotPath);
     if (!screenshotFolder.exists()) {
