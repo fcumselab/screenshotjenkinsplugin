@@ -25,9 +25,12 @@ import org.jenkinsci.Symbol;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
+import org.openqa.selenium.Keys;
 
 public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
 
@@ -83,15 +86,18 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
     // screenshot method
     WebDriver driver = new RemoteWebDriver(new URL(seleniumUrl), DesiredCapabilities.chrome());
     for (int i = 0; i < htmlFiles.size(); i++) {
-      Dimension windowDimension = new Dimension(1920,2160);
+      Dimension windowDimension = new Dimension(1024,768);
       driver.manage().window().maximize();
       driver.manage().window().setSize(windowDimension);
       driver.manage().window().fullscreen();
+      WebElement html = driver.findElement(By.tagName("html"));
+      html.sendKeys(Keys.chord(Keys.CONTROL, Keys.ADD));
       String htmlFile = driverGetPath + htmlFiles.get(i) + HTML;
       driver.get(htmlFile);
       TakesScreenshot screenshot = ((TakesScreenshot) driver);
       File screenshotFile = screenshot.getScreenshotAs(OutputType.FILE);
       FileUtils.copyFile(screenshotFile, new File(screenshotFolder + "/" + htmlFiles.get(i) + ".png"));
+      html.sendKeys(Keys.chord(Keys.CONTROL, "0"));
     }
     listener.getLogger().println("save the screenshot png in target/screenshot/");
     driver.quit();
