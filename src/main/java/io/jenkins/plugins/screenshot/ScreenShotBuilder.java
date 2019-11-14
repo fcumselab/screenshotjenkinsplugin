@@ -25,12 +25,9 @@ import org.jenkinsci.Symbol;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.JavascriptExecutor;
 
 public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
@@ -88,7 +85,7 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
     WebDriver driver = new RemoteWebDriver(new URL(seleniumUrl), DesiredCapabilities.chrome());
     JavascriptExecutor executor = (JavascriptExecutor)driver;
     for (int i = 0; i < htmlFiles.size(); i++) {
-      Dimension windowDimension = new Dimension(1024,768);
+      Dimension windowDimension = new Dimension(1920,2160);
       driver.manage().window().maximize();
       driver.manage().window().setSize(windowDimension);
       driver.manage().window().fullscreen();
