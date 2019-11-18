@@ -84,14 +84,10 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
     // screenshot method
     DesiredCapabilities capabilities = DesiredCapabilities.chrome();
     ChromeOptions options = new ChromeOptions();
-    options.addArguments("window-size=1024x768");
+    options.addArguments("--window-size=1024,768");
     capabilities.setCapability(ChromeOptions.CAPABILITY, options);
     WebDriver driver = new RemoteWebDriver(new URL(seleniumUrl), capabilities);
     for (int i = 0; i < htmlFiles.size(); i++) {
-      Dimension windowDimension = new Dimension(1024,768);
-      // driver.manage().window().maximize();
-      driver.manage().window().setSize(windowDimension);
-      // driver.manage().window().fullscreen();
       String htmlFile = driverGetPath + htmlFiles.get(i) + HTML;
       driver.get(htmlFile);
       TakesScreenshot screenshot = ((TakesScreenshot) driver);
