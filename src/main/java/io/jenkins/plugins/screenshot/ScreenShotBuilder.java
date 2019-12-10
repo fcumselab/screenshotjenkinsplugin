@@ -13,10 +13,13 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
-import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 
 import org.apache.commons.io.FileUtils;
@@ -28,13 +31,12 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.openqa.selenium.Dimension;
 
 public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
 
   private final static String HTML = ".html";
   private final String seleniumUrl;
-  
+  private final static int JENKINS_WORKSPACE_PATH = 28;
 
   @DataBoundConstructor
   public ScreenShotBuilder(String seleniumUrl) {
@@ -46,25 +48,21 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
   }
 
   // --step 1--
-  private static ArrayList searchAllHtmlFile(String filePath,String screenshotPath) throws IOException{
-    ArrayList allFiles = new ArrayList<>();
-    File file = new File(filePath);
-    if(file.isDirectory()){
-      for (String fileName:file.list()){
-        allFiles.addAll(searchAllHtmlFile(filePath+"/"+fileName,screenshotPath));
-      }
-    }else{
-      if(filePath.toString().contains(HTML)){
-        File targetHtml = new File(screenshotPath + "/" + filePath.substring(filePath.lastIndexOf("/")+1));
-        FileUtils.copyFile(file,targetHtml);
+  private static List<String> searchAllHtmlFile(String filePath) {
+    List<String> allFiles = null;
+    try (Stream<Path> walk = Files.walk(Paths.get(filePath))) {
 
-        String htmlName = filePath.substring(filePath.lastIndexOf("/")+1);
-        allFiles.add(htmlName.substring(0, htmlName.length() - HTML.length()));
-        return allFiles;
-      }else{
-        return allFiles;
-      }
+      allFiles = walk.filter(Files::isRegularFile).map(x -> x.toString())
+          .filter(f -> f.endsWith(HTML)).collect(Collectors.toList());
+
+    } catch (IOException e) {
+      e.printStackTrace();
     }
+    //cut /var/jenkins_home/workspace/ 28 chars
+    for (int i = 0; i < allFiles.size(); i++) {
+      allFiles.set(i, allFiles.get(i).substring(JENKINS_WORKSPACE_PATH));
+    }
+
     return allFiles;
     }
   // --step 1/--
@@ -73,8 +71,7 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
   private void screenshotMethod(FilePath workspace, List<String> htmlFiles, TaskListener listener) throws IOException {
     String screenshotPath = workspace + "/target/screenshot/";
 
-    String jobName = workspace.toString().substring(workspace.toString().lastIndexOf("/") + 1);
-    String driverGetPath = "file:////var/lib/workspace/" + jobName + "/target/screenshot/";
+    String driverGetPath = "file:////var/lib/workspace/";
     // create screenshot folder
     File screenshotFolder = new File(screenshotPath);
     if (!screenshotFolder.exists()) {
@@ -88,41 +85,33 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
     capabilities.setCapability(ChromeOptions.CAPABILITY, options);
     WebDriver driver = new RemoteWebDriver(new URL(seleniumUrl), capabilities);
     for (int i = 0; i < htmlFiles.size(); i++) {
-      String htmlFile = driverGetPath + htmlFiles.get(i) + HTML;
+      String htmlFile = driverGetPath + htmlFiles.get(i);
       driver.get(htmlFile);
       TakesScreenshot screenshot = ((TakesScreenshot) driver);
       File screenshotFile = screenshot.getScreenshotAs(OutputType.FILE);
-      FileUtils.copyFile(screenshotFile, new File(screenshotFolder + "/" + htmlFiles.get(i) + ".png"));
+      File file = new File(htmlFiles.get(i));
+      String fileName = file.getName();
+      FileUtils.copyFile(screenshotFile, new File(screenshotFolder + "/" + fileName + ".png"));
     }
     listener.getLogger().println("save the screenshot png in target/screenshot/");
     driver.quit();
   }
   // --step 2/--
 
-  // --step 3--
-  private void deleteHtmlFile(String screenshotPath, List<String> htmlFiles){
-    for (String file : htmlFiles){
-      File deleteFile = new File(screenshotPath + file + ".html");
-      deleteFile.delete();
-    }
-
-  }
-  // --step3/--
   @Override
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
       throws InterruptedException, IOException {
 
-    String screenshotPath = workspace + "/target/screenshot/";
     String filePath = workspace + "/src";
     // step1: search all html file
-    ArrayList htmlFiles = new ArrayList<>();
-    htmlFiles = searchAllHtmlFile(filePath, screenshotPath);
+    List<String> htmlFiles = null;
+    htmlFiles = searchAllHtmlFile(filePath);
+    for (int i = 0; i < htmlFiles.size(); i++) {
+      listener.getLogger().println("Find: " + htmlFiles.get(i));
+    }
 
     // step2: screenshot method
     screenshotMethod(workspace, htmlFiles, listener);
-
-    // step3: delete html file in screenshot folder
-    deleteHtmlFile(screenshotPath,htmlFiles);
   }
 
   @Symbol("greet")
