@@ -89,8 +89,7 @@ public class ScreenShotBuilder extends Builder implements SimpleBuildStep {
       driver.get(htmlFile);
       TakesScreenshot screenshot = ((TakesScreenshot) driver);
       File screenshotFile = screenshot.getScreenshotAs(OutputType.FILE);
-      File file = new File(htmlFiles.get(i));
-      String fileName = file.getName();
+      String fileName = new File(htmlFiles.get(i)).getName();//get HTML file name
       FileUtils.copyFile(screenshotFile, new File(screenshotFolder + "/" + fileName + ".png"));
     }
     listener.getLogger().println("save the screenshot png in target/screenshot/");
